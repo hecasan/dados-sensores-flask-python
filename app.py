@@ -53,6 +53,31 @@ def limpar_dados():
     conn.close()
     return jsonify({"message": "Dados limpos com sucesso"}), 200
 
+# Endpoint para buscar os dados em formato JSON (para uso no gráfico)
+@app.route('/dados-sensores-json', methods=['GET'])
+def dados_sensores_json():
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+    cursor.execute('SELECT timestamp, temperatura, umidade FROM dados_sensores')
+    rows = cursor.fetchall()
+    conn.close()
+
+    # Separando os dados em listas
+    timestamps = [row[0] for row in rows]
+    temperaturas = [row[1] for row in rows]
+    umidades = [row[2] for row in rows]
+
+    # Retornando um JSON com as listas
+    return jsonify({
+        "timestamp": timestamps,
+        "temperatura": temperaturas,
+        "umidade": umidades
+    })
+
+@app.route('/graficos')
+def graficos():
+    return render_template('graficos.html') 
+
 # Rota para a página principal
 @app.route('/')
 def index():
