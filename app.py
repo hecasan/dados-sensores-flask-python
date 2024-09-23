@@ -1,5 +1,6 @@
 from flask import Flask, request, jsonify, render_template
 import sqlite3
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 DATABASE = 'database.db'
@@ -74,14 +75,25 @@ def dados_sensores_json():
         "umidade": umidades
     })
 
-# Novo endpoint para buscar dados filtrados por sensor_id (GET)
-@app.route('/dados-sensores/<int:sensor_id>', methods=['GET'])
-def obter_dados_sensor(sensor_id):
+# Novo endpoint para buscar dados filtrados por sensor_id e intervalo de tempo (GET)
+@app.route('/dados-sensores-tempo/<int:sensor_id>', methods=['GET'])
+def obter_dados_sensor_tempo(sensor_id):
+    periodo = request.args.get('periodo')  # Parâmetro de tempo (ex.: 'hora', 'dia', 'semana')
+
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
 
-    # Consulta para filtrar os dados pelo sensor_id
-    cursor.execute('SELECT timestamp, temperatura, umidade FROM dados_sensores WHERE sensor_id = ?', (sensor_id,))
+    # Definir o intervalo de tempo baseado no parâmetro fornecido
+    if periodo == 'hora':
+        limite_tempo = datetime.now() - timedelta(hours=1)
+    elif periodo == 'dia':
+        limite_tempo = datetime.now() - timedelta(days=1)
+    elif periodo == 'semana':
+        limite_tempo = datetime.now() - timedelta(weeks=1)
+    else:
+        limite_tempo = datetime.min  # Retorna todos os dados se o período não for especificado
+
+    cursor.execute('SELECT timestamp, temperatura, umidade FROM dados_sensores WHERE sensor_id = ? AND timestamp > ?', (sensor_id, limite_tempo))
     dados = cursor.fetchall()
 
     # Transformando os dados em um formato adequado para JSON

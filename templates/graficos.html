@@ -18,6 +18,14 @@
 <body>
     <h1>Gráficos dos Sensores</h1>
 
+    <!-- Filtros de tempo -->
+    <label for="periodo">Escolha o intervalo de tempo:</label>
+    <select id="periodo" onchange="renderizarGraficos()">
+        <option value="hora">Última Hora</option>
+        <option value="dia">Último Dia</option>
+        <option value="semana">Última Semana</option>
+    </select>
+
     <h2>Sensor 1</h2>
     <canvas id="graficoSensor1"></canvas>
 
@@ -25,19 +33,28 @@
     <canvas id="graficoSensor2"></canvas>
 
     <script>
-        // Função para buscar os dados do sensor
-        async function obterDadosSensor(sensorId) {
-            const response = await fetch(`/dados-sensores/${sensorId}`);
+        let chart1; // Variável para armazenar a instância do gráfico 1
+        let chart2; // Variável para armazenar a instância do gráfico 2
+
+        // Função para buscar os dados do sensor com base no intervalo de tempo
+        async function obterDadosSensor(sensorId, periodo) {
+            const response = await fetch(`/dados-sensores-tempo/${sensorId}?periodo=${periodo}`);
             const data = await response.json();
             return data;
         }
 
         // Função para renderizar os gráficos
         async function renderizarGraficos() {
+            const periodo = document.getElementById('periodo').value;
+
+            // Verificar se os gráficos já existem, caso sim, destruí-los
+            if (chart1) chart1.destroy();
+            if (chart2) chart2.destroy();
+
             // Renderizar gráfico do Sensor 1
-            const dadosSensor1 = await obterDadosSensor(1);
+            const dadosSensor1 = await obterDadosSensor(1, periodo);
             const ctx1 = document.getElementById('graficoSensor1').getContext('2d');
-            new Chart(ctx1, {
+            chart1 = new Chart(ctx1, {
                 type: 'line',
                 data: {
                     labels: dadosSensor1.timestamp,
@@ -61,9 +78,9 @@
             });
 
             // Renderizar gráfico do Sensor 2
-            const dadosSensor2 = await obterDadosSensor(2);
+            const dadosSensor2 = await obterDadosSensor(2, periodo);
             const ctx2 = document.getElementById('graficoSensor2').getContext('2d');
-            new Chart(ctx2, {
+            chart2 = new Chart(ctx2, {
                 type: 'line',
                 data: {
                     labels: dadosSensor2.timestamp,
@@ -87,7 +104,7 @@
             });
         }
 
-        // Chama a função para renderizar os gráficos
+        // Chama a função para renderizar os gráficos com o período padrão (última hora)
         renderizarGraficos();
     </script>
 </body>
