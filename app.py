@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, render_template
 import sqlite3
 
 app = Flask(__name__)
-DATABASE = 'database.db' 
+DATABASE = 'database.db'
 
 # Função para inicializar o banco de dados e criar a tabela se não existir
 def init_db():
@@ -74,9 +74,30 @@ def dados_sensores_json():
         "umidade": umidades
     })
 
+# Novo endpoint para buscar dados filtrados por sensor_id (GET)
+@app.route('/dados-sensores/<int:sensor_id>', methods=['GET'])
+def obter_dados_sensor(sensor_id):
+    conn = sqlite3.connect(DATABASE)
+    cursor = conn.cursor()
+
+    # Consulta para filtrar os dados pelo sensor_id
+    cursor.execute('SELECT timestamp, temperatura, umidade FROM dados_sensores WHERE sensor_id = ?', (sensor_id,))
+    dados = cursor.fetchall()
+
+    # Transformando os dados em um formato adequado para JSON
+    dados_formatados = {
+        'timestamp': [linha[0] for linha in dados],
+        'temperatura': [linha[1] for linha in dados],
+        'umidade': [linha[2] for linha in dados]
+    }
+
+    conn.close()
+    return jsonify(dados_formatados)
+
+# Endpoint para exibir os gráficos
 @app.route('/graficos')
 def graficos():
-    return render_template('graficos.html') 
+    return render_template('graficos.html')
 
 # Rota para a página principal
 @app.route('/')
